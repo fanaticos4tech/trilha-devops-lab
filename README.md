@@ -206,5 +206,4 @@ Se este fosse um projeto colaborativo, aqui estariam as diretrizes de contribui�
 
 ---
 
-Este `README.md` serve como um ponto de partida. Adapte-o conforme a estrutura real e os detalhes específicos do seu laboratório "A Trilha DevOps". Boa jornada DevOps!
 
