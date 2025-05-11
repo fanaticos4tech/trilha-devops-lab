@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <title>Travis checks in Github - Continuous Integration part 2</title>
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" type="text/css" href="/assets/built/screen.css?v=fd17243be1" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Open+Sans:700,400" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/prism.css?v=fd17243be1" />
+
+    <meta name="description" content="Setting up TravisCI status checks on a PR is easy. Here are a few steps to set up your Github repository PRs with quality control." />
+    <link rel="shortcut icon" href="/favicon.png" type="image/png" />
+    <link rel="canonical" href="https://peterpoliwoda.me/travis-checks-in-github-continuous-integration/" />
+    <meta name="referrer" content="no-referrer-when-downgrade" />
+    <link rel="amphtml" href="https://peterpoliwoda.me/travis-checks-in-github-continuous-integration/amp/" />
+    
+    <meta property="og:site_name" content="Tales from the South Pole" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="Travis checks in Github - Continuous Integration part 2" />
+    <meta property="og:description" content="Setting up TravisCI status checks on a PR is easy. Here are a few steps to set up your Github repository PRs with quality control." />
+    <meta property="og:url" content="https://peterpoliwoda.me/travis-checks-in-github-continuous-integration/" />
+    <meta property="og:image" content="https://peterpoliwoda.me/content/images/2019/03/second_barrier_socialmedia.jpeg" />
+    <meta property="article:published_time" content="2019-03-24T20:40:27.000Z" />
+    <meta property="article:modified_time" content="2022-04-15T16:14:18.000Z" />
+    <meta property="article:tag" content="ci/cd" />
+    <meta property="article:tag" content="agile" />
+    <meta property="article:tag" content="code examples" />
+    <meta property="article:tag" content="github" />
+    
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Travis checks in Github - Continuous Integration part 2" />
+    <meta name="twitter:description" content="Setting up TravisCI status checks on a PR is easy. Here are a few steps to set up your Github repository PRs with quality control." />
+    <meta name="twitter:url" content="https://peterpoliwoda.me/travis-checks-in-github-continuous-integration/" />
+    <meta name="twitter:image" content="https://peterpoliwoda.me/content/images/2019/03/second_barrier_socialmedia-1.jpeg" />
+    <meta name="twitter:label1" content="Written by" />
+    <meta name="twitter:data1" content="Peter Poliwoda" />
+    <meta name="twitter:label2" content="Filed under" />
+    <meta name="twitter:data2" content="ci/cd, agile, code examples, github" />
+    <meta name="twitter:site" content="@peterpoliwoda" />
+    <meta name="twitter:creator" content="@peterpoliwoda" />
+    <meta property="og:image:width" content="735" />
+    <meta property="og:image:height" content="500" />
+    
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "publisher": {
+        "@type": "Organization",
+        "name": "Tales from the South Pole",
+        "url": "https://peterpoliwoda.me/",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "https://peterpoliwoda.me/favicon.png",
+            "width": 60,
+            "height": 60
+        }
+    },
+    "author": {
+        "@type": "Person",
+        "name": "Peter Poliwoda",
+        "image": {
+            "@type": "ImageObject",
+            "url": "https://peterpoliwoda.me/content/images/2020/05/peter-scared-by-penguins.png",
+            "width": 454,
+            "height": 454
+        },
+        "url": "https://peterpoliwoda.me/author/peter/",
+        "sameAs": [
+            "https://peterpoliwoda.me",
+            "https://twitter.com/peterpoliwoda"
+        ]
+    },
+    "headline": "Travis checks in Github - Continuous Integration part 2",
+    "url": "https://peterpoliwoda.me/travis-checks-in-github-continuous-integration/",
+    "datePublished": "2019-03-24T20:40:27.000Z",
+    "dateModified": "2022-04-15T16:14:18.000Z",
+    "image": {
+        "@type": "ImageObject",
+        "url": "https://peterpoliwoda.me/content/images/2020/05/CI_CD-Stages_Github-second-barrier.jpeg",
+        "width": 735,
+        "height": 500
+    },
+    "keywords": "ci/cd, agile, code examples, github",
+    "description": "Setting up TravisCI status checks on a PR is easy. Here are a few steps to set up your Github repository PRs with quality control.",
+    "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://peterpoliwoda.me/"
+    }
+}
+    </script>
+
+    <meta name="generator" content="Ghost 3.15" />
+    <link rel="alternate" type="application/rss+xml" title="Tales from the South Pole" href="https://peterpoliwoda.me/rss/" />
+    <!-- Global Site Tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-35860160-2"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-35860160-2');
+</script>
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1019709672090523"
+     crossorigin="anonymous"></script>
+
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "bhfmzphgmi");
+</script>
+
+</head>
+<body class="post-template tag-ci-cd tag-agile tag-code-examples tag-github">
+
+    <div class="site-wrapper">
+
+        
+
+<header class="site-header">
+    <div class="outer site-nav-main">
+    <div class="inner">
+        <nav class="site-nav">
+    <div class="site-nav-left-wrapper">
+        <div class="site-nav-left">
+                <a class="site-nav-logo" href="https://peterpoliwoda.me">Tales from the South Pole</a>
+            <div class="site-nav-content">
+                    <ul class="nav" role="menu">
+    <li class="nav-home" role="menuitem"><a href="https://peterpoliwoda.me/">Home</a></li>
+    <li class="nav-about-me" role="menuitem"><a href="https://peterpoliwoda.me/about/">About me</a></li>
+</ul>
+
+                    <span class="nav-post-title dash">Continuous Integration part 2: Setting up Travis checks in Github</span>
+            </div>
+        </div>
+    </div>
+    <div class="site-nav-right">
+            <ul class="nav" role="menu">
+    <li class="nav-github" role="menuitem"><a href="https://github.com/peterpoliwoda">GitHub</a></li>
+    <li class="nav-linkedin" role="menuitem"><a href="https://www.linkedin.com/in/peterpoliwoda/">LinkedIn</a></li>
+    <li class="nav-twitter" role="menuitem"><a href="https://twitter.com/peterpoliwoda">Twitter</a></li>
+</ul>
+
+
+    </div>
+</nav>
+    </div>
+</div></header>
+
+
+<main id="site-main" class="site-main outer">
+    <div class="inner">
+
+        <article class="post-full post tag-ci-cd tag-agile tag-code-examples tag-github featured ">
+
+            <header class="post-full-header">
+
+                <section class="post-full-tags">
+                    <a href="/tag/ci-cd/">ci/cd</a>
+                </section>
+
+                <h1 class="post-full-title">Continuous Integration part 2: Setting up Travis checks in Github</h1>
+
+                <p class="post-full-custom-excerpt">Setting up TravisCI status checks on a PR is easy. Here are a few steps to set up your Github repository PRs with quality control.</p>
+
+                <div class="post-full-byline">
+
+                    <section class="post-full-byline-content">
+
+                        <ul class="author-list">
+                            <li class="author-list-item">
+
+                                <div class="author-card">
+                                    <img class="author-profile-image" src="/content/images/size/w100/2020/05/peter-scared-by-penguins.png" alt="Peter Poliwoda" />
+                                    <div class="author-info">
+                                        <div class="bio">
+                                            <h2>Peter Poliwoda</h2>
+                                            <p>Software Engineer @IBM Full Stack Developer. Hobbyist designer. FrontEnd, Mobile apps and IoT. Curious first adopter of new tech. Views expressed are my own.</p>
+                                            <p><a href="/author/peter/">More posts</a> by Peter Poliwoda.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <a href="/author/peter/" class="author-avatar">
+                                    <img class="author-profile-image" src="/content/images/size/w100/2020/05/peter-scared-by-penguins.png" alt="Peter Poliwoda" />
+                                </a>
+
+                            </li>
+                        </ul>
+
+                        <section class="post-full-byline-meta">
+                            <h4 class="author-name"><a href="/author/peter/">Peter Poliwoda</a></h4>
+                            <div class="byline-meta-content">
+                                <time class="byline-meta-date" datetime="2019-03-24">24 Mar 2019</time>
+                                <span class="byline-reading-time"><span class="bull">&bull;</span> 10 min read</span>
+                            </div>
+                        </section>
+
+                    </section>
+
+
+                </div>
+            </header>
+
+            <figure class="post-full-image">
+                <img
+                    srcset="/content/images/size/w300/2020/05/CI_CD-Stages_Github-second-barrier.jpeg 300w,
+                            /content/images/size/w600/2020/05/CI_CD-Stages_Github-second-barrier.jpeg 600w,
+                            /content/images/size/w1000/2020/05/CI_CD-Stages_Github-second-barrier.jpeg 1000w,
+                            /content/images/size/w2000/2020/05/CI_CD-Stages_Github-second-barrier.jpeg 2000w"
+                    sizes="(max-width: 800px) 400px,
+                        (max-width: 1170px) 1170px,
+                            2000px"
+                    src="/content/images/size/w2000/2020/05/CI_CD-Stages_Github-second-barrier.jpeg"
+                    alt="Continuous Integration part 2: Setting up Travis checks in Github"
+                />
+            </figure>
+
+            <section class="post-full-content">
+                <div class="post-content">
+                    <!--kg-card-begin: markdown--><p>If you followed <a href="https://peterpoliwoda.me/agile-development-continuous-deployment-framework-with-git/">part 1 of this guide</a> you should have a local eslint check script on your git repository and a pre-commit hook that prevents you from uploading dodgy code to Github. In this part we will look at one of many ways you can work with Github, taking into account code reviews and working in a team. We will enable the same eslint check in our secondary stage in <a href="https://travis-ci.com/">Travis CI</a> on a Pull Request (from now called a PR). This is the point before the code gets merged into the main repository; a place where you would usually review the code and check for potential mistakes, typos and generally bad code you might've missed. This is what we'll use Travis for.</p>
+<h1 id="setupagithubrepository">Set up a Github repository</h1>
+<p>Before we continue you will need to create a new empty Github repo. I created one initialised with a README.md file.</p>
+<p><img src="https://peterpoliwoda.me/content/images/2018/05/Empty-github-repository.png" alt="Empty-github-repository"></p>
+<p>We will plug the newly created remote Github repository to our local git folder from step 1. To do that we will need to <strong>add</strong> a <strong>remote</strong> in our local git. To be in line with the standards we will call it <code>origin</code>. Open your git folder and run the command below:</p>
+<pre><code class="language-powershell">$ git remote add origin https://github.com/YOUR_USERNAME/REPO_NAME.git
+</code></pre>
+<p>This will connect the local repository to the remote which will enable you to push code over to Github.<br>
+<em>Note: this is using the HTTPS method to fetch and push to simplify the steps in this post. You should familiarise yourself with the <a href="https://help.github.com/articles/connecting-to-github-with-ssh/">SSH method</a> which in the long run is easier to work with, mainly beause you won't have to type in your login details all the time.</em></p>
+<h1 id="agileworkflowwithgithub">Agile workflow with Github</h1>
+<p><img src="https://peterpoliwoda.me/content/images/2018/05/CI_CD-Github-Workflow.jpg" alt="CI_CD-Github-Workflow"></p>
+<p>There is no right or wrong way of using Github really. The way you use it though generally depends on the size of your team. As a single user you could use a single <em>master</em> branch and use the repository as a one-to-one mirror of your local folder. That's perfectly OK, but by doing so you won't be able to use the full potential of git and Github.<br>
+In our case, we'll extend the single user work flow with an extra check &amp; review layer, which will come in handy if the team grows. We'll introduce the concept of branches and pull requests. It also gives you the ability to take another look at your own code in context before it's merged with the master repo.</p>
+<p>Here are a few concepts that you will need to know.</p>
+<h2 id="branches">Branches</h2>
+<blockquote>
+<p>Git branches are effectively a pointer to a snapshot of your changes. When you want to add a new feature or fix a bug—no matter how big or how small—you spawn a new branch to encapsulate your changes. [Atlasian]</p>
+</blockquote>
+<p>We will use branches to encapsulate a single task we want to tackle. This way we'll be able to come back to it any time. We will also be able to revert it easily if something goes wrong.<br>
+In my previous post I wrote about Github Projects and how you can use it to manage your project. Let's say the first task is to push the code that we wrote earlier to a Github repository. We will also include a file to enable Travis at the pull request stage.</p>
+<p>Let's first fetch the latest changes from the remote and then create a branch in our local git repo folder with the <code>git checkout -b [task_number] [remote_branch]</code> command:</p>
+<pre><code class="language-powershell">$ git fetch origin
+$ git checkout -b task_1 origin/master
+</code></pre>
+<p>These commands will do a couple of things. Our local repository will download all the changes from the remote repo, but won't merge them into the master branch. The second command will create a copy of the remote repo on a clean branch called task_1, it will then put everything you already had in your folder on top of that. Keep in mind doing stuff this way might cause merge conflicts. In our case that shouldn't matter because our remote repository at this stage should be empty.</p>
+<blockquote>
+<p>The default branch in git is called <code>master</code> and the <code>origin</code> is typically your own repository fork.</p>
+</blockquote>
+<p>In case you were working with more people you could create an organisation level repository, which other team members (including yourself) would fork in Github, in a way creating seprate remote instances (origins). In our case we only have a single remote repository so we can disregard this.</p>
+<p>Two things to keep in mind - first, we will now refer to the remote repository as the <code>origin</code>. Second, the <code>master</code> branch is our production branch. That being said, we will deploy the production ready code from the master branch.</p>
+<h3 id="commits">Commits</h3>
+<p>A commit is a packaged delta of your local changes. It can be a single file, or a bunch of lines in many files. <em>This also includes removed lines!</em> Git is flexible when it comes to the number of commits on a branch. I tend to stick to a single commit on a single branch, because it makes it easier to review code, but it's not a rule.</p>
+<h3 id="push">Push</h3>
+<p>A push is a git command that takes all commits on your current branch and pushes them to the remote repository. It can create a branch you pushed on the remote if it doesn't exist yet. You can also push to an existing remote branch.</p>
+<h3 id="pullrequest">Pull request</h3>
+<p>A pull request is a piece of code you want to suggest to copy over from one branch to another. As an example in the above workflow it would be the new task branch being pulled into the master branch. Notice that the code is pulled into the master and not pushed directly to it. It is a suggestion that can be rejected, amended or closed without resolution. At this stage team members would usually request each other to take a look at the code before it gets merged into the master branch.</p>
+<p>Using Travis we will be able to test the code in this PR in context of what branch it's getting merged into before it is approved. Some quick quality checks can go a long way and speed up the review process.</p>
+<p>Here we set the second barrier.</p>
+<h1 id="secondbarrier">Second barrier</h1>
+<p><img src="https://peterpoliwoda.me/content/images/2018/05/CI_CD-Stages_Github.jpeg" alt="CI_CD-Stages_Github"></p>
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- PeterPoliwoda.me -->
+<p><ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-1019709672090523"
+     data-ad-slot="2112777543"
+     data-ad-format="auto"></ins></p>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+<p>A pull request (PR) can be blocked from merging into the master repository if the code is not good enough. That is if any checks like eslint, unit tests, end-to-end tests, etc. fail the quality control. Using Travis we are able to run these checks here. Another advantage of merging code this way is that if there were more than one PR at the time and they had conflicting changes i.e. two people made changes to the same file at the same time, this fact would be caught here and block the user merging code before resolving the conflicts.</p>
+<h2 id="travis">Travis</h2>
+<p>Let's add a new file to enable Travis here. We will call it <code>.travis.yml</code>.</p>
+<pre><code class="language-powershell">$ touch .travis.yml
+</code></pre>
+<p>Then add in the code below:</p>
+<pre><code class="language-yaml">language: node_js
+node_js:
+  - &quot;10.15.3&quot;
+install:
+  - npm install
+script:
+  - npm test
+</code></pre>
+<p>We will set the language of the scripts to Nodejs version 10. This is the current LTS support version as I write this. This could be any newer <em>even numbered</em> version if you read this at a later stage.<br>
+The <strong>install:</strong> will be executed before any of the <strong>scripts</strong> run. We will only have single commands in each of them but you can run anything you like. As this is a YAML file you can list script commands in a dashed list. If you'd like you could run a full end-to-end test suite here. In our case, we will run the <code>npm test</code> command which at the moment only runs the eslint tests. If we ever extend the test command, Travis will pick it up automatically.</p>
+<p>Travis checks will get picked up and show in the PR as a green tick if your code passes the lint tests.</p>
+<p><img src="https://peterpoliwoda.me/content/images/2019/03/Travis-PR-check-passed.png" alt="Travis-PR-check-passed"></p>
+<h2 id="pushtogithub">Push to Github</h2>
+<p>OK, so we're at the stage where we can start adding in some code to our commit and push it into the remote to see if we set the barrier correctly. If you followed the previous post you'll have a commit hook and eslint set up in your local repository. We will need to add in the new files to the commit and push the extra travis file to your remote repository, in our case also being the origin. We can do that easily with the <code>git add .</code> command</p>
+<pre><code class="language-powershell">$ git add .
+$ git commit -m &quot;[Task 1] Push some files to repo and enable travis&quot;
+</code></pre>
+<p>After the commit check runs you will need to push the local commits to your remote repository. This will create a new branch in your origin called <code>task_1</code> just like your local branch</p>
+<pre><code class="language-powershell">$ git push origin task_1
+</code></pre>
+<p>We will now move over to the browser and open up your Github repository.</p>
+<h1 id="githubsourcecontrolstage">Github source control stage</h1>
+<h2 id="createpr">Create PR</h2>
+<p>Your Github repository should automatically show a yellow box on the top of the code page showing the newly created branch. Press the green button to <code>Compare [code] &amp; [create a] pull request</code></p>
+<p><img src="https://peterpoliwoda.me/content/images/2019/03/create-PR-from-branch.png" alt="create-PR-from-branch"></p>
+<h2 id="prreviewpage">PR review page</h2>
+<p>In Github your PR should look something like this. If you scroll down you can see your commit and all the changes you made in files added to this commit. The description is optional. You can now press <code>Create pull request</code>.</p>
+<p><img src="https://peterpoliwoda.me/content/images/2019/03/create-PR.png" alt="create-PR"></p>
+<p>We are almost there. Your PR should now be there, waiting to be reviewed. This is where you can possibly assign some reviews if you'd like. Send somebody the link to the PR and they could look at the changes in context of the whole code, which makes it really handy.</p>
+<h2 id="enabletravischecks">Enable Travis checks</h2>
+<p>The PR is created, files are there but something is missing. Well, Github doesn't automatically add any app integrations, but it's nice enough to suggest them in your PR. Click on <code>Several apps are available</code> and add the <strong>Travis Github App</strong> to your Github repositories.</p>
+<p><img src="https://peterpoliwoda.me/content/images/2019/03/suggest-github-app-integration.png" alt="suggest-github-app-integration"></p>
+<p><img src="https://peterpoliwoda.me/content/images/2019/03/search-for-travis-in-apps.png" alt="search-for-travis-in-apps"></p>
+<p><img src="https://peterpoliwoda.me/content/images/2019/03/install-travis-github-app.png" alt="install-travis-github-app"></p>
+<p><img src="https://peterpoliwoda.me/content/images/2019/03/authorise-travis.png" alt="authorise-travis"></p>
+<p>Once you're done you will see the Travis page. To check if everything is added properly to the repository you can take a look at your repository <strong>Settings</strong> tab. In the <strong>Integrations &amp; services section</strong> you will find the Travis CI app.</p>
+<p><img src="https://peterpoliwoda.me/content/images/2019/03/Travis-listed-in-Settings-.png" alt="Travis-listed-in-Settings-"></p>
+<h2 id="isitrunningyet">Is it running yet?</h2>
+<p>Almost. The PR we already created will not be picked up because we enabled Travis after the fact. The checks will run on the next push. Let's create another commit and push it into the same branch.<br>
+You can make a small change to your code now. Let's add a comment at the end of the lintMe.js file.</p>
+<p><img src="https://peterpoliwoda.me/content/images/2019/03/Small-code-change.png" alt="Small-code-change"></p>
+<p>You can then git add the file, create another commit and push.</p>
+<pre><code class="language-powershell">$ git add lintMe.js
+$ git commit -m &quot;[Task 1] Run travis now&quot;
+$ git push origin task_1
+</code></pre>
+<p>Now your Travis checks should be picked up by the app and your eslint tests will run.</p>
+<p><img src="https://peterpoliwoda.me/content/images/2019/03/Travis-check-finally-showing-on-PR.png" alt="Travis-check-finally-showing-on-PR"></p>
+<p>You can see both of your commits and the checks below in yellow. Yours will most likely have two checks on branch and PR. Once they're finished they will either give you a green tick, or a red cross depending if the files that you pushed were passing the eslint checks. If you did follow <a href="https://peterpoliwoda.me/agile-development-continuous-deployment-framework-with-git/">part 1 of this guide</a> your commit hooks should prevent you from pushing changes that won't pass in Travis.</p>
+<p>If they are failing, you might want to check if you pushed the <strong>package.json</strong> file and Travis is running the <code>npm install</code> and <code>npm test</code> scripts correctly. Also make sure you don't push your <em>node_modules/</em> folder because that could cause trouble.</p>
+<h2 id="twoticksoronetick">Two ticks or one tick?</h2>
+<p>By default you'll see two ticks here rather than just the one in the screen shot. This is due to the fact that Travis is running a build <strong>on the branch</strong> and a <strong>build on the Pull Request</strong>.</p>
+<p>You can go to your Travis page by clicking on the <code>Details</code> link in the PR. In <strong>Travis / Settings</strong> you can deselect the option to run builds on branches if you don't want to.</p>
+<p><img src="https://peterpoliwoda.me/content/images/2019/03/Travis-settings.png" alt="Travis-settings"></p>
+<p><img src="https://peterpoliwoda.me/content/images/2019/03/travis-disable-run-on-branch-.png" alt="travis-disable-run-on-branch-"></p>
+<p>You could potentially leave it ON, and for example utilise some of the deploy capabilities of Travis. This is something I will talk about in the next post, which will be about the <strong>Third Barrier</strong> at the <strong>deployment</strong> stage. I will also mention how to run your app in <strong>IBM Cloud / Bluemix</strong>.</p>
+<h2 id="preventingbrokencodefromgettingmerged">Preventing broken code from getting merged</h2>
+<p>For a meaningful PR status check we can do one more thing. In the repository settings you can block the PR from getting merged into some of your branches. As we decided that the <code>master</code> branch is going to be <em>production code</em>, we wouldn't want to push anything to this branch if the status checks are not passing. It's a small thing that could be overwritten with administration privileges, if you really want to, but it will be screaming at you that it's broken, just in case you didn't notice the red X crosses everywhere.</p>
+<p>You can do it in the <strong>Branches</strong> section of your repo <strong>Settings</strong>.</p>
+<p><img src="https://peterpoliwoda.me/content/images/2019/03/passing-status-checks.png" alt="passing-status-checks"></p>
+<p>Oooff! OK, this was a long one, but I hope it was somewhat useful. As usual more to come.<br>
+Stay tuned.<br>
+Cześć!</p>
+<!--kg-card-end: markdown--><h2 id="has-this-been-helpful-to-you">Has this been helpful to you?</h2><p>You can support my work by sharing this article with others, or perhaps <a href="https://ko-fi.com/peterpoliwoda">buy me a cup of coffee</a> 😊 </p><figure class="kg-card kg-image-card kg-card-hascaption"><img src="data:image/png;base64,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" class="kg-image" alt="Kofi"><figcaption>https://ko-fi.com/peterpoliwoda</figcaption></figure><hr>
+                </div>
+            </section>
+
+
+<!-- GoogleAds -->
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- PeterPoliwoda.me -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-1019709672090523"
+     data-ad-slot="2112777543"
+     data-ad-format="auto"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+	    <div id="disqus_thread"></div>
+            <script>
+    /**
+     *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+     *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+     */
+
+    var disqus_config = function () {
+        this.page.url = 'https://peterpoliwoda.me/travis-checks-in-github-continuous-integration/';  // Replace PAGE_URL with your page's canonical URL variable
+        this.page.identifier = 'ghost-5ae7b0b821b5fc244b38403e'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+    };
+
+    (function() {  // DON'T EDIT BELOW THIS LINE
+        var d = document, s = d.createElement('script');
+
+        s.src = '//chasedbypenguins.disqus.com/embed.js';
+
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+        </article>
+
+    </div>
+</main>
+
+<aside class="read-next outer">
+    <div class="inner">
+        <div class="read-next-feed">
+                <article class="read-next-card">
+                    <header class="read-next-card-header">
+                        <h3><span>More in</span> <a href="/tag/ci-cd/">ci/cd</a></h3>
+                    </header>
+                    <div class="read-next-card-content">
+                        <ul>
+                            <li>
+                                <h4><a href="/preventing-ibm-cloud-app-from-stopping-when-you-deploy-is-easy/">Preventing your IBM Cloud app from stopping when you deploy is easy!</a></h4>
+                                <div class="read-next-card-meta">
+                                    <p><time datetime="2018-06-03">3 Jun 2018</time> –
+                                        3 min read</p>
+                                </div>
+                            </li>
+                            <li>
+                                <h4><a href="/agile-development-continuous-deployment-framework-with-git/">Continuous Integration part 1: Developing and being Agile with Git</a></h4>
+                                <div class="read-next-card-meta">
+                                    <p><time datetime="2018-05-08">8 May 2018</time> –
+                                        8 min read</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <footer class="read-next-card-footer">
+                        <a href="/tag/ci-cd/">See all 2 posts
+                            →</a>
+                    </footer>
+                </article>
+
+                <article class="post-card post tag-react tag-coding tag-web ">
+
+    <a class="post-card-image-link" href="/what-the-documentation-doesnt-tell-you-about-the-react-useeffect-hook/">
+        <img class="post-card-image"
+            srcset="/content/images/size/w300/2021/09/5B940A82-C953-41C3-BECB-BC348038EB63.jpeg 300w,
+                    /content/images/size/w600/2021/09/5B940A82-C953-41C3-BECB-BC348038EB63.jpeg 600w,
+                    /content/images/size/w1000/2021/09/5B940A82-C953-41C3-BECB-BC348038EB63.jpeg 1000w,
+                    /content/images/size/w2000/2021/09/5B940A82-C953-41C3-BECB-BC348038EB63.jpeg 2000w"
+            sizes="(max-width: 1000px) 400px, 700px"
+            loading="lazy"
+            src="/content/images/size/w600/2021/09/5B940A82-C953-41C3-BECB-BC348038EB63.jpeg"
+            alt="What the documentation doesn&#x27;t tell you about the React useEffect hook?"
+        />
+    </a>
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/what-the-documentation-doesnt-tell-you-about-the-react-useeffect-hook/">
+
+            <header class="post-card-header">
+                    <div class="post-card-primary-tag">React</div>
+                <h2 class="post-card-title">What the documentation doesn&#x27;t tell you about the React useEffect hook?</h2>
+            </header>
+
+            <section class="post-card-excerpt">
+                    <p>When approaching the useEffect hook in React and to be fair hooks in general, the first thing is to forget what you think you know because you will get confused</p>
+            </section>
+
+        </a>
+
+        <footer class="post-card-meta">
+            <ul class="author-list">
+                <li class="author-list-item">
+            
+                    <div class="author-name-tooltip">
+                        Peter Poliwoda
+                    </div>
+            
+                    <a href="/author/peter/" class="static-avatar">
+                        <img class="author-profile-image" src="/content/images/size/w100/2020/05/peter-scared-by-penguins.png" alt="Peter Poliwoda" />
+                    </a>
+                </li>
+            </ul>
+            <div class="post-card-byline-content">
+                <span><a href="/author/peter/">Peter Poliwoda</a></span>
+                <span class="post-card-byline-date"><time datetime="2019-09-11">11 Sep 2019</time> <span class="bull">&bull;</span> 3 min read</span>
+            </div>
+        </footer>
+
+    </div>
+
+</article>
+
+                <article class="post-card post tag-node-js tag-code-examples tag-bluemix ">
+
+    <a class="post-card-image-link" href="/developer-hints-why-do-my-cloud-foundry-node-app-ports-keep-growing/">
+        <img class="post-card-image"
+            srcset="/content/images/size/w300/2020/06/91E7BA63-1295-42EA-BBF3-BB4CF069148C.jpeg 300w,
+                    /content/images/size/w600/2020/06/91E7BA63-1295-42EA-BBF3-BB4CF069148C.jpeg 600w,
+                    /content/images/size/w1000/2020/06/91E7BA63-1295-42EA-BBF3-BB4CF069148C.jpeg 1000w,
+                    /content/images/size/w2000/2020/06/91E7BA63-1295-42EA-BBF3-BB4CF069148C.jpeg 2000w"
+            sizes="(max-width: 1000px) 400px, 700px"
+            loading="lazy"
+            src="/content/images/size/w600/2020/06/91E7BA63-1295-42EA-BBF3-BB4CF069148C.jpeg"
+            alt="Developer hints: Why do my node.js app ports keep growing?"
+        />
+    </a>
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/developer-hints-why-do-my-cloud-foundry-node-app-ports-keep-growing/">
+
+            <header class="post-card-header">
+                    <div class="post-card-primary-tag">Node.js</div>
+                <h2 class="post-card-title">Developer hints: Why do my node.js app ports keep growing?</h2>
+            </header>
+
+            <section class="post-card-excerpt">
+                    <p>Working with NodeJS sometimes you get to see some strange things in your dev environment. For example, when working with Cloud Foundry your apps would automatically assign a port number</p>
+            </section>
+
+        </a>
+
+        <footer class="post-card-meta">
+            <ul class="author-list">
+                <li class="author-list-item">
+            
+                    <div class="author-name-tooltip">
+                        Peter Poliwoda
+                    </div>
+            
+                    <a href="/author/peter/" class="static-avatar">
+                        <img class="author-profile-image" src="/content/images/size/w100/2020/05/peter-scared-by-penguins.png" alt="Peter Poliwoda" />
+                    </a>
+                </li>
+            </ul>
+            <div class="post-card-byline-content">
+                <span><a href="/author/peter/">Peter Poliwoda</a></span>
+                <span class="post-card-byline-date"><time datetime="2019-01-18">18 Jan 2019</time> <span class="bull">&bull;</span> 1 min read</span>
+            </div>
+        </footer>
+
+    </div>
+
+</article>
+        </div>
+    </div>
+</aside>
+
+
+
+
+        <footer class="site-footer outer">
+            <div class="site-footer-content inner">
+                <section class="copyright"><a href="https://peterpoliwoda.me">Tales from the South Pole</a> &copy; 2025</section>
+                <nav class="site-footer-nav">
+                    <a href="https://peterpoliwoda.me">Latest Posts</a>
+                    
+                    <a href="https://twitter.com/peterpoliwoda" target="_blank" rel="noopener">Twitter</a>
+                    <a href="https://ghost.org" target="_blank" rel="noopener">Ghost</a>
+                </nav>
+            </div>
+        </footer>
+
+    </div>
+
+
+    <script
+        src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+        crossorigin="anonymous">
+    </script>
+    <script src="/assets/built/casper.js?v=fd17243be1"></script>
+
+    <script>
+        // Parse the URL parameter
+        function getParameterByName(name, url) {
+            if (!url) url = window.location.href;
+            name = name.replace(/[\[\]]/g, "\\$&");
+            var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, " "));
+        }
+
+        // Give the parameter a variable name
+        var action = getParameterByName('action');
+
+        $(document).ready(function () {
+            if (action == 'subscribe') {
+                $('body').addClass("subscribe-success");
+            }
+
+            $('.subscribe-success-message .subscribe-close').click(function () {
+                $('.subscribe-success-message').addClass('close');
+            });
+
+            // Reset form on opening subscrion overlay
+            $('.subscribe-button').click(function() {
+                $('.subscribe-overlay form').removeClass();
+                $('.subscribe-email').val('');
+            });
+        });
+    </script>
+    <script type="text/javascript" src="/assets/js/prism.js?v=fd17243be1"></script>
+
+    <script>
+    $(document).ready(function () {
+        // FitVids - start
+        var $postContent = $(".post-full-content");
+        $postContent.fitVids();
+        // FitVids - end
+
+        // Replace nav with title on scroll - start
+        Casper.stickyNavTitle({
+            navSelector: '.site-nav-main',
+            titleSelector: '.post-full-title',
+            activeClass: 'nav-post-title-active'
+        });
+        // Replace nav with title on scroll - end
+
+        // Hover on avatar
+        var hoverTimeout;
+        $('.author-list-item').hover(function () {
+            var $this = $(this);
+
+            clearTimeout(hoverTimeout);
+
+            $('.author-card').removeClass('hovered');
+            $(this).children('.author-card').addClass('hovered');
+
+        }, function () {
+            var $this = $(this);
+
+            hoverTimeout = setTimeout(function () {
+                $this.children('.author-card').removeClass('hovered');
+            }, 800);
+        });
+    });
+</script>
+
+
+    
+
+</body>
+</html>
