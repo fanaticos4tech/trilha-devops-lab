@@ -1,0 +1,129 @@
+# .github/workflows/terraform-plan.yml
+
+name: "Terraform Plan"
+
+# Gatilho: Apenas em Pull Requests para a branch main
+
+on:
+
+  pull_request:
+
+    branches:
+
+      - main
+
+# Permissões: Leitura de conteúdo é suficiente para plan
+
+permissions:
+
+  contents: read
+
+  pull-requests: read # Necessário para actions que comentam no PR
+
+# Evita execuções concorrentes do mesmo workflow para o mesmo PR
+
+concurrency:
+
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+
+  cancel-in-progress: true
+
+jobs:
+
+  plan:
+
+    name: "Terraform Plan"
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: "Checkout Code"
+
+        uses: actions/checkout@v4
+
+      # Configura as credenciais AWS usando os secrets
+
+      - name: "Configure AWS Credentials"
+
+        uses: aws-actions/configure-aws-credentials@v4
+
+        with:
+
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+          aws-region: us-east-1 # Use a mesma região das suas variáveis Terraform
+
+      - name: "Setup Terraform"
+
+        uses: hashicorp/setup-terraform@v3
+
+        with:
+
+          terraform_version: "1.8.4"
+
+      # Roda init - agora precisamos do backend padrão (local)
+
+      - name: "Terraform Init"
+
+        id: init
+
+        run: terraform init
+
+      # Roda plan - -no-color para output limpo nos logs
+
+      - name: "Terraform Plan"
+
+        id: plan
+
+        run: terraform plan -no-color
+
+      # (Opcional Avançado - Adiciona comentário no PR com o output do plan)
+
+      # Este step usa uma action da comunidade para postar o resultado do plan
+
+      # como um comentário no Pull Request, facilitando a revisão.
+
+      # - name: Add Plan Output to PR
+
+      #   uses: actions/github-script@v7
+
+      #   if: github.event_name == 'pull_request'
+
+      #   env:
+
+      #     PLAN: "${{ steps.plan.outputs.stdout }}"
+
+      #   with:
+
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      #     script: |
+
+      #       const output = `#### Terraform Plan 📖\n\n<details><summary>Show Plan</summary>
+
+      #       \n\`\`\`terraform
+
+      #       ${process.env.PLAN}
+
+      #       \`\`\`
+
+      #       </details>
+
+      #       \n\*Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*
+
+      #       `;
+
+      #       github.rest.issues.createComment({
+
+      #         issue_number: context.issue.number,
+
+      #         owner: context.repo.owner,
+
+      #         repo: context.repo.repo,
+
+      #         body: output
+
+      #       })
