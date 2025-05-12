@@ -16,7 +16,7 @@ resource "aws_vpc" "main" {
 
   })
 
-
+}
 
 # Criação do S3 Bucket
 
