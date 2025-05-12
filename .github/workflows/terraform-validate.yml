@@ -47,7 +47,7 @@ jobs:
 
           terraform_version: "1.8.4" # Especifique a mesma versão que você usa localmente
 
-          # terraform_wrapper: true # Descomente se quiser output mais detalhado
+          terraform_wrapper: true # Descomente se quiser output mais detalhado
 
       # Passo 3: Inicializar o Terraform
 
