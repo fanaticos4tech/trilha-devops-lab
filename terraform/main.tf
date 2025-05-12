@@ -74,20 +74,4 @@ resource "aws_s3_bucket_public_access_block" "lab_bucket_pab" {
 
 }
 
-# Criação de uma Subnet Pública
 
-resource "aws_subnet" "public_subnet" {
-
-  vpc_id            = aws_vpc.main.id
-
-  cidr_block        = "10.0.1.0/24" # Sub-rede dentro do CIDR da VPC
-
-  availability_zone = "${var.aws_region}a" # Ex: us-east-1a
-
-  tags = merge(var.common_tags, {
-
-    Name = "trilha-devops-public-subnet-a"
-
-  })
-
-}

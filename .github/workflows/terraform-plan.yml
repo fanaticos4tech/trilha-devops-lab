@@ -72,6 +72,8 @@ jobs:
 
         run: terraform init
 
+        working-directory: ../../terraform/
+
       # Roda plan - -no-color para output limpo nos logs
 
       - name: "Terraform Plan"
@@ -79,6 +81,8 @@ jobs:
         id: plan
 
         run: terraform plan -no-color
+
+        working-directory: ../../terraform/
 
       # (Opcional Avançado - Adiciona comentário no PR com o output do plan)
 
