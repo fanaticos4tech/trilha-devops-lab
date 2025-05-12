@@ -2,7 +2,7 @@
 
 name: "Terraform Plan"
 
-# Gatilho: Apenas em Pull Requests para a branch main
+# Gatilho: Apenas em Pull Requests para a branch main # 
 
 on:
 
