@@ -80,7 +80,7 @@ jobs:
 
         id: plan
 
-        run: terraform plan -no-color
+        run: terraform plan -no-color && terraform plan -detailed-exitcode
 
         working-directory: ./terraform/
 
