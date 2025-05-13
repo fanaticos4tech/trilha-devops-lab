@@ -38,8 +38,9 @@ resource "aws_s3_bucket" "lab_bucket" {
 
   tags = merge(var.common_tags, {
 
-    Name = "trilha-devops-lab-bucket"
-
+    Name = "trilha-devops-lab-bucket",
+    
+    Environment = "Prod"
   })
 
 }
