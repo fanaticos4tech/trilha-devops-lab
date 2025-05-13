@@ -39,7 +39,7 @@ resource "aws_s3_bucket" "lab_bucket" {
   tags = merge(var.common_tags, {
 
     Name = "trilha-devops-lab-bucket",
-    
+
     Environment = "Prod"
   })
 
@@ -74,5 +74,3 @@ resource "aws_s3_bucket_public_access_block" "lab_bucket_pab" {
   restrict_public_buckets = true
 
 }
-
-
