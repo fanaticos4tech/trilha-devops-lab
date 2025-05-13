@@ -1,7 +1,7 @@
 name: Terraform CD (Apply to Main)
 
 on:
-  push:
+  pull_request:
     branches:
       - main
   workflow_dispatch: # Allows manual triggering
@@ -103,7 +103,7 @@ jobs:
       - name: Terraform Apply
         id: apply
         # Add 'if' condition if using a manual approval step that sets an output
-        if: steps.manual_approval.outputs.approved == 'true' || github.event_name == 'workflow_dispatch'
+        # if: steps.manual_approval.outputs.approved == 'true' || github.event_name == 'workflow_dispatch'
         run: terraform apply -auto-approve tfplan
 
       # Optional: Post-Deploy Smoke Tests
