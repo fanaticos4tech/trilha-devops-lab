@@ -55,7 +55,18 @@ jobs:
           curl -sSL https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -o /usr/local/bin/tfsec
           chmod +x /usr/local/bin/tfsec
           echo "tfsec installed: $(tfsec --version)"
-        
+
+      - name: Terraform Init
+        id: init
+        run: terraform init -upgrade 
+        # Add backend configuration if not in the files, e.g.:
+        # run: terraform init -backend-config="bucket=my-tfstate-bucket-prod" -backend-config="key=prod/terraform.tfstate" -backend-config="region=us-east-1"
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -out=tfplan
+        # For PRs, you might use -detailed-exitcode. For main, plan is for audit.
+
       - name: Terraform Format Check
         id: fmt
         run: terraform fmt -check -recursive
@@ -74,17 +85,6 @@ jobs:
         continue-on-error: true 
         # For JUnit report output for better integration with GitHub Actions test reporting:
         # run: tfsec . --format junit --out tfsec-results.xml
-
-      - name: Terraform Init
-        id: init
-        run: terraform init -upgrade 
-        # Add backend configuration if not in the files, e.g.:
-        # run: terraform init -backend-config="bucket=my-tfstate-bucket-prod" -backend-config="key=prod/terraform.tfstate" -backend-config="region=us-east-1"
-
-      - name: Terraform Plan
-        id: plan
-        run: terraform plan -no-color -out=tfplan
-        # For PRs, you might use -detailed-exitcode. For main, plan is for audit.
 
       # Optional: Manual Approval Step (if not using GitHub Environments)
       # This is a conceptual placeholder. For real manual approval, GitHub Environments are better.
