@@ -51,10 +51,14 @@ jobs:
 
       - name: Install tfsec
         run: |
-          echo "Installing tfsec..."
-          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install.sh | bash -s -- -b /usr/local/bin
+          echo "Downloading tfsec..."
+          curl -sSL https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -o /usr/local/bin/tfsec
+          chmod +x /usr/local/bin/tfsec
           echo "tfsec installed: $(tfsec --version)"
-        working-directory: . # Run in root to install globally for the runner
+
+      - name: Run tfsec
+        run: |
+          tfsec .
 
       - name: Terraform Format Check
         id: fmt
