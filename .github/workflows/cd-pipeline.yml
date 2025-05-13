@@ -12,14 +12,16 @@ jobs:
     name: Terraform Plan
     runs-on: ubuntu-latest
 
-    env:
-      AWS_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }} # Use dedicated prod secrets
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }} # Or your production region
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -30,7 +32,7 @@ jobs:
       - name: Terraform Init
         run: terraform init -backend-config="bucket=trilha-devops-terraform-state-bucket" \
                             -backend-config="key=terraform.tfstate" \
-                            -backend-config="region=${{ env.AWS_REGION }}" \
+                            -backend-config="region=${{ secrets.AWS_DEFAULT_REGION }}" \
                             -backend-config="encrypt=true"
 
       - name: Terraform Plan
@@ -73,14 +75,13 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup Terraform
-        run: |
-          curl -sLo terraform.zip https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip
-          unzip terraform.zip
-          sudo mv terraform /usr/local/bin/
-          terraform -version
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.8.4" # Or your desired version
+          # terraform_wrapper: true # Consider using if you have complex setups
 
       - name: Download Plan Output
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.6.2
         with:
           name: tfplan
 
