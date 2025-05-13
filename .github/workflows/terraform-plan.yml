@@ -10,7 +10,7 @@ on:
 
     branches:
 
-      - main
+      - teste
 
 # Permissões: Leitura de conteúdo é suficiente para plan
 

@@ -1,0 +1,5 @@
+# Caminho ou padrão          Proprietários
+/terraform/environments/prod @fanaticos4tech
+#*.tf                         @usuario1 @equipe1
+#/.github/workflows/          @security-team
+#*.md                         @content-team
