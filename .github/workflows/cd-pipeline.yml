@@ -77,7 +77,7 @@ jobs:
 
       - name: Terraform Init
         id: init
-        run: terraform init
+        run: terraform init -upgrade 
         # Add backend configuration if not in the files, e.g.:
         # run: terraform init -backend-config="bucket=my-tfstate-bucket-prod" -backend-config="key=prod/terraform.tfstate" -backend-config="region=us-east-1"
 
