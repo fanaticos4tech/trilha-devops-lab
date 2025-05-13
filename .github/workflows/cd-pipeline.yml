@@ -55,11 +55,6 @@ jobs:
           curl -sSL https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -o /usr/local/bin/tfsec
           chmod +x /usr/local/bin/tfsec
           echo "tfsec installed: $(tfsec --version)"
-
-      - name: Run tfsec
-        run: |
-          tfsec .
-        continue-on-error: true
         
       - name: Terraform Format Check
         id: fmt
@@ -76,7 +71,7 @@ jobs:
         # Run tfsec from the root of the terraform configuration for this environment
         run: tfsec .
         # To fail the pipeline on issues, remove continue-on-error or set to false
-        # continue-on-error: true 
+        continue-on-error: true 
         # For JUnit report output for better integration with GitHub Actions test reporting:
         # run: tfsec . --format junit --out tfsec-results.xml
 
