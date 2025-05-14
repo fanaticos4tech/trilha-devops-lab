@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   deploy:
+    
     name: Deploy to AWS Production
     runs-on: ubuntu-latest
     # Uncomment and configure if using GitHub Environments for manual approval
@@ -32,6 +33,12 @@ jobs:
         working-directory: ./terraform/environments/prod
 
     steps:
+      - name: Display Environment Variables
+        run: |
+          echo "Environment: ${{ env.ENVIRONMENT }}"
+          echo "AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}"
+          echo "AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}"
+          echo "AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION_PROD }}"
       - name: Checkout Code
         uses: actions/checkout@v4
 
