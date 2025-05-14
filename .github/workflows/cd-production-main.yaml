@@ -46,9 +46,9 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }} # Use dedicated prod secrets
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1 # Or your production region
+          aws-access-key-id: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_PROD_DEFAULT_REGION }} # Or your production region
 
 
       - name: Setup Terraform
@@ -91,7 +91,7 @@ jobs:
         # To fail the pipeline on issues, remove continue-on-error or set to false
         continue-on-error: true 
         # For JUnit report output for better integration with GitHub Actions test reporting:
-        # run: tfsec . --format junit --out tfsec-results.xml
+        # run: tfsec . --format junitAWS_ACCESS_KEY_ID --out tfsec-results.xml
 
       # Optional: Manual Approval Step (if not using GitHub Environments)
       # This is a conceptual placeholder. For real manual approval, GitHub Environments are better.
