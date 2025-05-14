@@ -75,6 +75,12 @@ jobs:
         run: terraform plan -no-color -out=tfplan
         # For PRs, you might use -detailed-exitcode. For main, plan is for audit.
 
+      - name: Save Plan Output
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: tfplan
+          path: tfplan
+
       - name: Terraform Format Check
         id: fmt
         run: terraform fmt -check -recursive
@@ -94,6 +100,51 @@ jobs:
         # For JUnit report output for better integration with GitHub Actions test reporting:
         # run: tfsec . --format junitAWS_ACCESS_KEY_ID --out tfsec-results.xml
 
+  manual_approval:
+    name: Manual Approval
+    needs: plan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Wait for Approval
+        id: approval
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { context, github } = require('@actions/github');
+            const { pull_request } = context.payload;
+            const reviewers = pull_request.requested_reviewers;
+            if (reviewers.length === 0) {
+              core.setOutput('approved', 'true');
+            } else {
+              core.setOutput('approved', 'false');
+            }
+
+  apply:
+    name: Terraform Apply
+    needs: [plan, manual_approval]
+    runs-on: ubuntu-latest
+    if: needs.manual_approval.outputs.approved == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.8.4" # Or your desired version
+          # terraform_wrapper: true # Consider using if you have complex setups
+
+      - name: Download Plan Output
+        uses: actions/download-artifact@v4.6.2
+        with:
+          name: tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+
+
       # Optional: Manual Approval Step (if not using GitHub Environments)
       # This is a conceptual placeholder. For real manual approval, GitHub Environments are better.
       # - name: Manual Approval Required
@@ -108,11 +159,11 @@ jobs:
       #   # This step would need a more complex setup to actually pause and wait for an external signal.
       #   # GitHub Environments with required reviewers is the recommended way.
 
-      - name: Terraform Apply
-        id: apply
-        # Add 'if' condition if using a manual approval step that sets an output
-        # if: steps.manual_approval.outputs.approved == 'true' || github.event_name == 'workflow_dispatch'
-        run: terraform apply -auto-approve tfplan
+      #- name: Terraform Apply
+      #  id: apply
+      #  # Add 'if' condition if using a manual approval step that sets an output
+      #  # if: steps.manual_approval.outputs.approved == 'true' || github.event_name == 'workflow_dispatch'
+      #  run: terraform apply -auto-approve tfplan
 
       # Optional: Post-Deploy Smoke Tests
       # - name: Run Smoke Tests
