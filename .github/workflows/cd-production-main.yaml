@@ -100,7 +100,7 @@ jobs:
 
   manual_approval:
     name: Manual Approval
-    needs: plan
+    needs: deploy
     runs-on: ubuntu-latest
 
     steps:
@@ -109,9 +109,9 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const { context, github } = require('@actions/github');
-            const { pull_request } = context.payload;
-            const reviewers = pull_request.requested_reviewers;
+            const core = require('@actions/core');
+            const { context } = require('@actions/github');
+            const reviewers = context.payload.pull_request?.requested_reviewers || [];
             if (reviewers.length === 0) {
               core.setOutput('approved', 'true');
             } else {
@@ -120,7 +120,7 @@ jobs:
 
   apply:
     name: Terraform Apply
-    needs: [plan, manual_approval]
+    needs: [deploy, manual_approval]
     runs-on: ubuntu-latest
     if: needs.manual_approval.outputs.approved == 'true'
 
