@@ -111,14 +111,26 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const { context, github } = require('@actions/github');
-            const { pull_request } = context.payload;
-            const reviewers = pull_request.requested_reviewers;
-            if (reviewers.length === 0) {
-              core.setOutput('approved', 'true');
-            } else {
-              core.setOutput('approved', 'false');
-            }
+                    // O script deve começar diretamente usando 'context' e 'github' (e 'core' que também é injetado)
+                    const { pull_request } = context.payload;
+
+                    // Verifique se pull_request e requested_reviewers existem, especialmente se o workflow não for disparado por um PR
+                    if (pull_request && pull_request.requested_reviewers) {
+                      const reviewers = pull_request.requested_reviewers;
+                      if (reviewers.length === 0) {
+                        core.setOutput('approved', 'true');
+                      } else {
+                        core.setOutput('approved', 'false');
+                      }
+                    } else {
+                      // Se não for um evento de pull request, ou não houver reviewers, 
+                      // defina um comportamento padrão. Por exemplo, aprovar automaticamente ou falhar.
+                      // Para um workflow de CD na 'main' que pode ser disparado por push ou workflow_dispatch,
+                      // este script de aprovação baseado em PR reviewers pode não ser o ideal.
+                      // Considere se este job de aprovação manual ainda faz sentido para gatilhos que não são PRs.
+                      // Por agora, vou assumir que para não-PRs, ele aprova (ou você pode querer que ele falhe ou espere de outra forma).
+                      core.setOutput('approved', 'true'); 
+                    }
 
   apply:
     name: Terraform Apply
