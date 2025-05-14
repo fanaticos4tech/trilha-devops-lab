@@ -67,7 +67,7 @@ jobs:
         id: init
         #run: terraform init -upgrade 
         # Add backend configuration if not in the files, e.g.:
-        run: terraform init -backend-config="bucket=trilha-devops-tfstate-bucket-prod" -backend-config="key=prod/terraform.tfstate" -backend-config="region=us-east-1"
+        run: terraform init -backend-config="bucket=prod-trilha-devops-fanaticos4tech-terraform-state" -backend-config="key=prod/terraform.tfstate" -backend-config="region=us-east-1"
 
       - name: Terraform Plan
         id: plan
