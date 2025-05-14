@@ -102,7 +102,7 @@ jobs:
 
   manual_approval:
     name: Manual Approval
-    needs: plan
+    needs: deploy
     runs-on: ubuntu-latest
 
     steps:
@@ -122,7 +122,7 @@ jobs:
 
   apply:
     name: Terraform Apply
-    needs: [plan, manual_approval]
+    needs: [deploy, manual_approval]
     runs-on: ubuntu-latest
     if: needs.manual_approval.outputs.approved == 'true'
 
