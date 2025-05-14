@@ -1,0 +1,89 @@
+name: Terraform Workflow (Production Deployment)
+
+on:
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }} # Use dedicated prod secrets
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }} # Or your production region
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.8.4" # Or your desired version
+          # terraform_wrapper: true # Consider using if you have complex setups
+
+      - name: Terraform Init
+        run: terraform init -backend-config="bucket=trilha-devops-terraform-state-bucket" \
+                            -backend-config="key=terraform.tfstate" \
+                            -backend-config="region=${{ secrets.AWS_DEFAULT_REGION }}" \
+                            -backend-config="encrypt=true"
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Save Plan Output
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: tfplan
+          path: tfplan
+
+  manual_approval:
+    name: Manual Approval
+    needs: plan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Wait for Approval
+        id: approval
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { context, github } = require('@actions/github');
+            const { pull_request } = context.payload;
+            const reviewers = pull_request.requested_reviewers;
+            if (reviewers.length === 0) {
+              core.setOutput('approved', 'true');
+            } else {
+              core.setOutput('approved', 'false');
+            }
+
+  apply:
+    name: Terraform Apply
+    needs: [plan, manual_approval]
+    runs-on: ubuntu-latest
+    if: needs.manual_approval.outputs.approved == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.8.4" # Or your desired version
+          # terraform_wrapper: true # Consider using if you have complex setups
+
+      - name: Download Plan Output
+        uses: actions/download-artifact@v4.6.2
+        with:
+          name: tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
