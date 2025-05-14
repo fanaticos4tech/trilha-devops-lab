@@ -29,7 +29,7 @@ jobs:
         shell: bash
         # Assuming Terraform files are in ./terraform/environments/prod
         # Adjust this path if your production Terraform files are elsewhere.
-        working-directory: ../terraform/environments/prod
+        working-directory: terraform/environments/prod
 
     steps:
       - name: Display Environment Variables
