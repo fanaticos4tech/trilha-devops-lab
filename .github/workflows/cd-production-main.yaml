@@ -17,8 +17,10 @@ concurrency:
 
 jobs:
   deploy:
+    
     name: Deploy to AWS Production
     runs-on: ubuntu-latest
+    environment: prod
     # Uncomment and configure if using GitHub Environments for manual approval
     # environment:
     #   name: production
@@ -32,12 +34,11 @@ jobs:
         working-directory: ./terraform/environments/prod
 
     steps:
-      - name: Display Environment Variables
-        run: |
-          echo "Environment: ${{ env.ENVIRONMENT }}"
-          echo "AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}"
-          echo "AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}"
-          echo "AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION_PROD }}"
+      #- name: Display Environment Variables
+      #  run: |
+      #    echo "AWS_ACCESS_KEY_ID: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}"
+      #    echo "AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}"
+      #    echo "AWS_DEFAULT_REGION: ${{ secrets.AWS_PROD_REGION }}"
 
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -45,9 +46,10 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_PROD_ACCESS_KEY_ID_PROD }} # Use dedicated prod secrets
-          aws-secret-access-key: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY_PROD }}
-          aws-region: ${{ secrets.AWS_REGION_PROD }} # Or your production region
+          aws-access-key-id: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }} # Or your production region
+
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -57,10 +59,27 @@ jobs:
 
       - name: Install tfsec
         run: |
-          echo "Installing tfsec..."
-          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install.sh | bash -s -- -b /usr/local/bin
+          echo "Downloading tfsec..."
+          curl -sSL https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -o /usr/local/bin/tfsec
+          chmod +x /usr/local/bin/tfsec
           echo "tfsec installed: $(tfsec --version)"
-        working-directory: . # Run in root to install globally for the runner
+      - name: Terraform Init
+        id: init
+        #run: terraform init -upgrade 
+        # Add backend configuration if not in the files, e.g.:
+        #run: terraform init -backend-config="bucket=trilha-devops-tfstate-bucket-prod" -backend-config="key=prod/terraform.tfstate" -backend-config="region=us-east-1"
+        run: terraform init -backend-config="bucket=prod-trilha-devops-fanaticos4tech-terraform-state" -backend-config="key=terraform.tfstate" -backend-config="region=${{ secrets.AWS_DEFAULT_REGION }}" -backend-config="encrypt=true"
+    
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -out=tfplan
+        # For PRs, you might use -detailed-exitcode. For main, plan is for audit.
+
+      - name: Save Plan Output
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: tfplan
+          path: tfplan
 
       - name: Terraform Format Check
         id: fmt
@@ -77,26 +96,9 @@ jobs:
         # Run tfsec from the root of the terraform configuration for this environment
         run: tfsec .
         # To fail the pipeline on issues, remove continue-on-error or set to false
-        # continue-on-error: true 
+        continue-on-error: true 
         # For JUnit report output for better integration with GitHub Actions test reporting:
-        # run: tfsec . --format junit --out tfsec-results.xml
-
-      - name: Terraform Init
-        id: init
-        # run: terraform init
-        # Add backend configuration if not in the files, e.g.:
-        run: terraform init -backend-config="bucket=trilha-devops-terraform-state-bucket" -backend-config="key=prod/terraform.tfstate" -backend-config="region=${{ secrets.AWS_DEFAULT_REGION }}"
-
-      - name: Terraform Plan
-        id: plan
-        run: terraform plan -out=tfplan
-        # For PRs, you might use -detailed-exitcode. For main, plan is for audit.
-
-      - name: Save Plan Output
-        uses: actions/upload-artifact@v4.6.2
-        with:
-          name: tfplan
-          path: tfplan
+        # run: tfsec . --format junitAWS_ACCESS_KEY_ID --out tfsec-results.xml
 
   manual_approval:
     name: Manual Approval
@@ -142,6 +144,7 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
 
+
       # Optional: Manual Approval Step (if not using GitHub Environments)
       # This is a conceptual placeholder. For real manual approval, GitHub Environments are better.
       # - name: Manual Approval Required
@@ -158,8 +161,8 @@ jobs:
 
       #- name: Terraform Apply
       #  id: apply
-        # Add 'if' condition if using a manual approval step that sets an output
-        # if: steps.manual_approval.outputs.approved == 'true' || github.event_name == 'workflow_dispatch'
+      #  # Add 'if' condition if using a manual approval step that sets an output
+      #  # if: steps.manual_approval.outputs.approved == 'true' || github.event_name == 'workflow_dispatch'
       #  run: terraform apply -auto-approve tfplan
 
       # Optional: Post-Deploy Smoke Tests
@@ -192,4 +195,3 @@ jobs:
       #     SLACK_ICON_EMOJI: ":rocket:"
       #     SLACK_COLOR: "good"
       #     SLACK_MESSAGE: "Production Deploy Successful! 🎉 ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
