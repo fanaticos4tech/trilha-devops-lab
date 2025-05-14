@@ -1,0 +1,78 @@
+# Gatilhos: Executa em push na main ou em PR para main
+
+on:
+
+  push:
+
+    branches:
+
+      - main
+
+  pull_request:
+
+    branches:
+
+      - main
+
+# Permissões mínimas para o GITHUB_TOKEN
+permissions:
+
+  contents: read
+
+  pull-requests: read # Necessário se você quiser adicionar comentários em PRs no futuro
+
+jobs:
+
+  validate:
+
+    name: "Validate Terraform Code"
+
+    runs-on: ubuntu-latest # Usa um runner Ubuntu fornecido pelo GitHub
+
+    steps:
+
+      # Passo 1: Fazer checkout do código do repositório
+
+      - name: "Checkout Code"
+
+        uses: actions/checkout@v4 # Action oficial para baixar o código
+
+      # Passo 2: Configurar o Terraform CLI
+
+      - name: "Setup Terraform"
+
+        uses: hashicorp/setup-terraform@v3 # Action oficial da HashiCorp
+
+        with:
+
+          terraform_version: "1.8.4" # Especifique a mesma versão que você usa localmente
+
+          terraform_wrapper: true # Descomente se quiser output mais detalhado
+
+      # Passo 3: Inicializar o Terraform
+
+      # O init é necessário para baixar providers antes de validar
+
+      - name: "Terraform Init"
+
+        id: init
+
+        run: terraform init -backend=false # -backend=false pois não precisamos do estado para validar
+
+      # Passo 4: Verificar a formatação do código
+
+      # O --check falha se o código não estiver formatado
+
+      - name: "Terraform Format Check"
+
+        id: fmt
+
+        run: terraform fmt -check -recursive
+
+      # Passo 5: Validar a sintaxe e configuração do Terraform
+
+      - name: "Terraform Validate"
+
+        id: validate
+
+        run: terraform validate
