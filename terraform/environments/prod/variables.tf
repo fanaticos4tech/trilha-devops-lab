@@ -6,7 +6,7 @@ variable "aws_region" {
 
   type = string
 
-  default = "us-east-1" # Você pode mudar para sua região preferida
+  default = "eu-central-1" # Você pode mudar para sua região preferida
 
 }
 

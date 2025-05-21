@@ -1,0 +1,155 @@
+# .github/workflows/deploy.yml
+
+name: "Deploy to ECS"
+
+# Gatilho: Apenas em push na branch main
+
+on:
+
+  push:
+
+    branches:
+
+      - main
+
+permissions:
+
+  contents: read
+
+  # Necessário para aws-actions/configure-aws-credentials com OIDC (alternativa a access keys)
+
+  id-token: write 
+
+# Variáveis de ambiente para o workflow
+
+env:
+
+  AWS_REGION: "eu-central-1" # Substitua pela sua região
+
+  ECR_REPOSITORY: "trilha-devops-app" # Nome do repo ECR (sem a URL completa)
+
+  ECS_CLUSTER_NAME: "trilha-devops-cluster" # Nome do cluster ECS
+
+  ECS_SERVICE_NAME: "trilha-devops-service" # Nome do serviço ECS
+
+  ECS_TASK_FAMILY: "trilha-devops-task" # Família da Task Definition
+
+  CONTAINER_NAME: "trilha-devops-app-container" # Nome do container na Task Definition
+
+jobs:
+
+  deploy:
+
+    name: "Build, Push and Deploy"
+
+    runs-on: ubuntu-latest
+
+    environment: production # Opcional: Define um ambiente (útil para secrets/regras de ambiente)
+
+    steps:
+
+      - name: "Checkout Code"
+
+        uses: actions/checkout@v4
+
+      # Configura credenciais AWS (usando OIDC - mais seguro que chaves de acesso)
+
+      # Se preferir usar as chaves de acesso dos secrets:
+
+      # uses: aws-actions/configure-aws-credentials@v4
+
+      # with:
+
+      #   aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+
+      #   aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      #   aws-region: ${{ env.AWS_REGION }}
+
+      - name: "Configure AWS Credentials"
+
+        uses: aws-actions/configure-aws-credentials@v4
+
+        with:
+
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionECSRole # Crie esta role no IAM!
+
+          aws-region: ${{ env.AWS_REGION }}
+
+          # role-session-name: GitHubActionSession # Opcional
+
+      # Login no Amazon ECR
+
+      - name: "Login to Amazon ECR"
+
+        id: login-ecr
+
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Build, tag e push da imagem para ECR
+
+      - name: "Build, Tag, and Push Image to Amazon ECR"
+
+        id: build-image
+
+        env:
+
+          # Pega a URL completa do ECR do output do step anterior
+
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+
+          # Usa o SHA curto do commit como tag da imagem
+
+          IMAGE_TAG: ${{ github.sha }}
+
+        run: |
+
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      # Baixa a definição da task atual do ECS
+
+      - name: "Download Task Definition"
+
+        run: |
+
+          aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_FAMILY }} \
+
+            --query taskDefinition > task-definition.json
+
+      # Preenche a nova definição de task com a imagem recém-criada
+
+      # e remove campos não permitidos para registro
+
+      - name: "Fill in New Image ID in Task Definition"
+
+        id: task-def
+
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+
+        with:
+
+          task-definition: task-definition.json
+
+          container-name: ${{ env.CONTAINER_NAME }}
+
+          image: ${{ steps.build-image.outputs.image }}
+
+      # Registra a nova revisão da Task Definition no ECS
+
+      - name: "Deploy Amazon ECS Task Definition"
+
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+
+        with:
+
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+
+          service: ${{ env.ECS_SERVICE_NAME }}
+
+          cluster: ${{ env.ECS_CLUSTER_NAME }}
+
+          wait-for-service-stability: true # Espera o deploy ser concluído com sucesso
