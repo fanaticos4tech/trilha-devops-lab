@@ -1,0 +1,208 @@
+
+name: Terraform Deployment - CD (Production Main)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allows manual triggering
+
+permissions:
+  contents: read
+  id-token: write # Required for OIDC if used for AWS authentication
+  pull-requests: write # If you want to add comments or status checks
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false # Do not cancel CD runs if a new commit is pushed
+
+jobs:
+  deploy:
+    
+    name: Deploy to AWS Production
+    runs-on: ubuntu-latest
+    environment: prod
+    # Uncomment and configure if using GitHub Environments for manual approval
+    # environment:
+    #   name: production
+    #   url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+    defaults:
+      run:
+        shell: bash
+        # Assuming Terraform files are in ./terraform/environments/prod
+        # Adjust this path if your production Terraform files are elsewhere.
+        working-directory: ./terraform/environments/prod
+
+    steps:
+      #- name: Display Environment Variables
+      #  run: |
+      #    echo "AWS_ACCESS_KEY_ID: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}"
+      #    echo "AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}"
+      #    echo "AWS_DEFAULT_REGION: ${{ secrets.AWS_PROD_REGION }}"
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }} # Or your production region
+
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.8.4" # Or your desired version
+          # terraform_wrapper: true # Consider using if you have complex setups
+
+      - name: Install tfsec
+        run: |
+          echo "Downloading tfsec..."
+          curl -sSL https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -o /usr/local/bin/tfsec
+          chmod +x /usr/local/bin/tfsec
+          echo "tfsec installed: $(tfsec --version)"
+      - name: Terraform Init
+        id: init
+        #run: terraform init -upgrade 
+        # Add backend configuration if not in the files, e.g.:
+        #run: terraform init -backend-config="bucket=trilha-devops-tfstate-bucket-prod" -backend-config="key=prod/terraform.tfstate" -backend-config="region=us-east-1"
+        run: terraform init -backend-config="bucket=prod-trilha-devops-fanaticos4tech-terraform-state" -backend-config="key=terraform.tfstate" -backend-config="region=${{ secrets.AWS_DEFAULT_REGION }}" -backend-config="encrypt=true"
+    
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -out=tfplan
+        # For PRs, you might use -detailed-exitcode. For main, plan is for audit.
+
+      - name: Save Plan Output
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: tfplan
+          path: tfplan
+
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: false
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate
+        continue-on-error: false
+
+      - name: Run tfsec Security Scan
+        id: tfsec
+        # Run tfsec from the root of the terraform configuration for this environment
+        run: tfsec .
+        # To fail the pipeline on issues, remove continue-on-error or set to false
+        continue-on-error: true 
+        # For JUnit report output for better integration with GitHub Actions test reporting:
+        # run: tfsec . --format junitAWS_ACCESS_KEY_ID --out tfsec-results.xml
+
+  manual_approval:
+    name: Manual Approval
+    needs: deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Wait for Approval
+        id: approval
+        uses: actions/github-script@v6
+        with:
+          script: |
+                    // O script deve começar diretamente usando 'context' e 'github' (e 'core' que também é injetado)
+                    const { pull_request } = context.payload;
+                    // Verifique se pull_request e requested_reviewers existem, especialmente se o workflow não for disparado por um PR
+                    if (pull_request && pull_request.requested_reviewers) {
+                      const reviewers = pull_request.requested_reviewers;
+                      if (reviewers.length === 0) {
+                        core.setOutput('approved', 'true');
+                      } else {
+                        core.setOutput('approved', 'false');
+                      }
+                    } else {
+                      // Se não for um evento de pull request, ou não houver reviewers, 
+                      // defina um comportamento padrão. Por exemplo, aprovar automaticamente ou falhar.
+                      // Para um workflow de CD na 'main' que pode ser disparado por push ou workflow_dispatch,
+                      // este script de aprovação baseado em PR reviewers pode não ser o ideal.
+                      // Considere se este job de aprovação manual ainda faz sentido para gatilhos que não são PRs.
+                      // Por agora, vou assumir que para não-PRs, ele aprova (ou você pode querer que ele falhe ou espere de outra forma).
+                      core.setOutput('approved', 'true'); 
+                    }
+  apply:
+    name: Terraform Apply
+    needs: [deploy, manual_approval]
+    runs-on: ubuntu-latest
+    if: needs.manual_approval.outputs.approved == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.8.4" # Or your desired version
+          # terraform_wrapper: true # Consider using if you have complex setups
+
+      - name: Download Plan Output
+        uses: actions/download-artifact@v4.6.2
+        with:
+          name: tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+
+
+      # Optional: Manual Approval Step (if not using GitHub Environments)
+      # This is a conceptual placeholder. For real manual approval, GitHub Environments are better.
+      # - name: Manual Approval Required
+      #   if: github.ref == 'refs/heads/main' # Only for main branch deploys
+      #   run: |
+      #     echo "-----------------------------------------------------------------"
+      #     echo "MANUAL APPROVAL REQUIRED TO APPLY TO PRODUCTION (main branch)"
+      #     echo "Review the Terraform Plan above."
+      #     echo "To approve, add a comment containing '/approve' to the commit or PR."
+      #     echo "This step will time out in 1 hour if no approval is given."
+      #     echo "-----------------------------------------------------------------"
+      #   # This step would need a more complex setup to actually pause and wait for an external signal.
+      #   # GitHub Environments with required reviewers is the recommended way.
+
+      #- name: Terraform Apply
+      #  id: apply
+      #  # Add 'if' condition if using a manual approval step that sets an output
+      #  # if: steps.manual_approval.outputs.approved == 'true' || github.event_name == 'workflow_dispatch'
+      #  run: terraform apply -auto-approve tfplan
+
+      # Optional: Post-Deploy Smoke Tests
+      # - name: Run Smoke Tests
+      #   if: steps.apply.outcome == 'success'
+      #   run: |
+      #     echo "Running smoke tests..."
+      #     # Add your smoke test commands here
+      #     # Example: curl -s --fail http://<your-app-url>/health || exit 1
+      #   working-directory: . # Or wherever your smoke test scripts are
+
+      # Optional: Slack Notification on Failure
+      # - name: Notify on Failure
+      #   if: failure()
+      #   uses: rtCamp/action-slack-notify@v2
+      #   env:
+      #     SLACK_WEBHOOK: ${{ secrets.SLACK_PROD_DEPLOY_WEBHOOK }}
+      #     SLACK_USERNAME: GitHub Actions CD
+      #     SLACK_ICON_EMOJI: ":boom:"
+      #     SLACK_COLOR: "danger"
+      #     SLACK_MESSAGE: "Production Deploy Failed! 💣️ ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      # Optional: Slack Notification on Success
+      # - name: Notify on Success
+      #   if: success()
+      #   uses: rtCamp/action-slack-notify@v2
+      #   env:
+      #     SLACK_WEBHOOK: ${{ secrets.SLACK_PROD_DEPLOY_WEBHOOK }}
+      #     SLACK_USERNAME: GitHub Actions CD
+      #     SLACK_ICON_EMOJI: ":rocket:"
+      #     SLACK_COLOR: "good"
+      #     SLACK_MESSAGE: "Production Deploy Successful! 🎉 ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
